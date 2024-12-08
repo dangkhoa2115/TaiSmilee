@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Dữ Liệu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-container {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .form-container label {
+            display: block;
+            margin: 5px 0 2px;
+        }
+        .form-container input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-add {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-edit {
+            background-color: #ffc107;
+            color: white;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            text-align: center;
+            padding: 8px;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        td {
+            cursor: pointer;
+        }
+        .totals {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quản Lý Dữ Liệu</h1>
+    <div class="form-container">
+        <form id="data-form">
+            <input type="hidden" id="row-index" value="">
+            <label for="account">Account:</label>
+            <input type="text" id="account" placeholder="Nhập Account" required>
+            <label for="name">Tên:</label>
+            <input type="text" id="name" placeholder="Nhập Tên" required>
+            <label for="idServer">ID Server:</label>
+            <input type="number" id="idServer" placeholder="Nhập ID Server" required>
+            <label for="kcCon">KC Còn:</label>
+            <input type="number" id="kcCon" placeholder="Nhập KC Còn" required>
+            <label for="star">Star Còn:</label>
+            <input type="number" id="star" placeholder="Nhập Star Còn" required>
+            <button type="submit" class="btn btn-add">Lưu</button>
+        </form>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Account</th>
+                <th>Tên</th>
+                <th>ID Server</th>
+                <th>KC Còn</th>
+                <th>Star Còn</th>
+                <th>Hành Động</th>
+            </tr>
+        </thead>
+        <tbody id="data-table-body"></tbody>
+    </table>
+    <div class="totals">
+        Tổng KC Còn: <span id="total-kc">0</span><br>
+        Tổng Star Còn: <span id="total-star">0</span>
+    </div>
+    <script>
+        const form = document.getElementById('data-form');
+        const tableBody = document.getElementById('data-table-body');
+        const accountInput = document.getElementById('account');
+        const nameInput = document.getElementById('name');
+        const idServerInput = document.getElementById('idServer');
+        const kcConInput = document.getElementById('kcCon');
+        const starInput = document.getElementById('star');
+        const rowIndexInput = document.getElementById('row-index');
+        const totalKc = document.getElementById('total-kc');
+        const totalStar = document.getElementById('total-star');
+        let data = JSON.parse(localStorage.getItem('data')) || [];
+        function renderTable() {
+            tableBody.innerHTML = '';
+            let kcTotal = 0;
+            let starTotal = 0;
+            data.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td onclick="copyToClipboard('${item.account}')">${item.account}</td>
+                    <td onclick="copyToClipboard('${item.name}')">${item.name}</td>
+                    <td onclick="copyToClipboard('${item.idServer}')">${item.idServer}</td>
+                    <td onclick="copyToClipboard('${item.kcCon}')">${item.kcCon}</td>
+                    <td onclick="copyToClipboard('${item.star}')">${item.star}</td>
+                    <td>
+                        <button class="btn btn-edit" onclick="editRow(${index})">Sửa</button>
+                        <button class="btn btn-delete" onclick="deleteRow(${index})">Xóa</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+                kcTotal += item.kcCon;
+                starTotal += item.star;
+            });
+            totalKc.textContent = kcTotal;
+            totalStar.textContent = starTotal;
+        }
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => alert(`Đã copy: ${text}`))
+                .catch(err => console.error('Lỗi copy!', err));
+        }
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const account = accountInput.value;
+            const name = nameInput.value;
+            const idServer = parseInt(idServerInput.value);
+            const kcCon = parseInt(kcConInput.value);
+            const star = parseInt(starInput.value);
+            const rowIndex = rowIndexInput.value;
+            if (rowIndex === '') {
+                data.push({ account, name, idServer, kcCon, star });
+            } else {
+                data[rowIndex] = { account, name, idServer, kcCon, star };
+            }
+            localStorage.setItem('data', JSON.stringify(data));
+            renderTable();
+            form.reset();
+            rowIndexInput.value = '';
+        });
+        function editRow(index) {
+            const item = data[index];
+            accountInput.value = item.account;
+            nameInput.value = item.name;
+            idServerInput.value = item.idServer;
+            kcConInput.value = item.kcCon;
+            starInput.value = item.star;
+            rowIndexInput.value = index;
+        }
+        function deleteRow(index) {
+            data.splice(index, 1);
+            localStorage.setItem('data', JSON.stringify(data));
+            renderTable();
+        }
+        renderTable();
+    </script>
+</body>
+</html>
